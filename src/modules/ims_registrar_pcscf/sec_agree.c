@@ -46,6 +46,18 @@ static uint32_t parse_digits(str value)
     return ret;
 }
 
+static void trim_whitespaces(str* string) {
+    // skip leading whitespace
+    while(string->len && (string->s[0]==' ' || string->s[0]=='\t' || string->s[0]=='<')){
+        string->s = string->s + 1;
+        string->len --;
+    }
+
+    // skip trailing whitespace
+    while(string->len && (string->s[string->len-1]==' ' || string->s[string->len-1]=='\t')){
+        string->len--;
+    }
+}
 
 #define SEC_COPY_STR_PARAM(DST, SRC)\
         DST.s = shm_malloc(SRC.len);\
@@ -58,6 +70,8 @@ static uint32_t parse_digits(str value)
 
 static int process_sec_agree_param(str name, str value, ipsec_t *ret)
 {
+    trim_whitespaces(&name);
+    trim_whitespaces(&value);
 
     if(strncasecmp(name.s, "alg", name.len) == 0) {
         SEC_COPY_STR_PARAM(ret->r_alg, value);
@@ -100,18 +114,9 @@ static security_t* parse_sec_agree(struct hdr_field* h)
     security_t* params = NULL;
     str body = h->body;
 
-    // skip leading whitespace
-    while(body.len && (body.s[0]==' ' || body.s[0]=='\t' || body.s[0]=='<')){
-        body.s = body.s + 1;
-        body.len --;
-    }
+    trim_whitespaces(&body);
 
-    // skip trailing whitespace
-    while(body.len && (body.s[body.len-1]==' ' || body.s[body.len-1]=='\t')){
-        body.len--;
-    }
-
-    // skip  header name - noone seems to need it
+    // find mechanism name end
     for(i = 0; body.s[i] != ';' && i < body.len; i++);
 
     mechanism_name.s = body.s;
@@ -227,8 +232,8 @@ cleanup:
 
 
 static str s_security_client={"Security-Client",15};
-static str s_security_server={"Security-Server",15};
-static str s_security_verify={"Security-Verify",15};
+//static str s_security_server={"Security-Server",15};
+//static str s_security_verify={"Security-Verify",15};
 /**
  * Looks for the Security-Client header
  * @param msg - the sip message
@@ -249,9 +254,7 @@ security_t* cscf_get_security(struct sip_msg *msg)
     h = msg->headers;
     while(h)
     {
-        if ((h->name.len == s_security_client.len && strncasecmp(h->name.s, s_security_client.s, s_security_client.len)==0) ||
-            (h->name.len == s_security_server.len && strncasecmp(h->name.s, s_security_server.s, s_security_server.len)==0) ||
-            (h->name.len == s_security_verify.len && strncasecmp(h->name.s, s_security_verify.s, s_security_verify.len)==0) )
+        if (h->name.len == s_security_client.len && strncasecmp(h->name.s, s_security_client.s, s_security_client.len)==0)
         {
             return parse_sec_agree(h);
         }
