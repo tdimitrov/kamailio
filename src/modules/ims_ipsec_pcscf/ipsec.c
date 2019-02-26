@@ -187,7 +187,7 @@ int add_sa(struct mnl_socket* nl_sock, unsigned short proto, const struct ip_add
     // The point is to provide a continuous chunk of memory with the key in it
     l_auth_algo = (struct xfrm_algo *)l_auth_algo_buf;
 
-    strcpy(l_auth_algo->alg_name,"md5");
+    strcpy(l_auth_algo->alg_name,"sha1");
     l_auth_algo->alg_key_len = ik.len * 4;
     string_to_key(l_auth_algo->alg_key, ik);
 
